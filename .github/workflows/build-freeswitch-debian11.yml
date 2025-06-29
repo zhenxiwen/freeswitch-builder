@@ -3,6 +3,9 @@ name: ⛓️ Build FreeSWITCH for Debian 11
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write  # 👈 允许 push 回仓库
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,7 +21,7 @@ jobs:
             libpcre3-dev libspeexdsp-dev libopus-dev libsndfile1-dev \
             libavformat-dev libswscale-dev liblua5.4-dev libpq-dev uuid-dev yasm cmake unzip ca-certificates wget
 
-      - name: 📥 下载源码
+      - name: 📥 下载 FreeSWITCH 源码
         run: |
           wget https://github.com/signalwire/freeswitch/archive/refs/tags/v1.10.10.tar.gz
           tar -xzf v1.10.10.tar.gz
@@ -35,12 +38,21 @@ jobs:
           make -j$(nproc)
           make install
 
-      - name: 📦 打包产物
+      - name: 📦 打包为 .tar.gz
         run: |
           tar -czf freeswitch-debian11.tar.gz -C /opt/freeswitch .
 
-      - name: ☁️ 上传构建产物
-        uses: actions/upload-artifact@v4
-        with:
-          name: freeswitch-debian11
-          path: freeswitch-debian11.tar.gz
+      - name: 🪛 提交产物回仓库
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@users.noreply.github.com"
+
+          mkdir -p build-freeswitch-for-debian11
+          mv freeswitch-debian11.tar.gz build-freeswitch-for-debian11/
+
+          git pull origin ${{ github.ref_name }}
+          git add build-freeswitch-for-debian11/freeswitch-debian11.tar.gz
+          git commit -m "🤖 自动添加构建产物：FreeSWITCH Debian 11 tar.gz"
+          git push origin HEAD:${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
