@@ -62,7 +62,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🧪 Debug 输出构建日志（仅失败时）
+      - name: 🧪 输出 config.log（仅失败时）
         if: failure()
         run: |
           echo "⛏️ 构建失败，尝试读取 config.log"
