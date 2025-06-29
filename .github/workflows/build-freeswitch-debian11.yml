@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # ✨ 允许 push 回仓库
+  contents: write  # ✅ 允许推送回仓库
 
 jobs:
   build:
@@ -17,7 +17,7 @@ jobs:
         run: |
           apt update
           apt install -y git build-essential autoconf automake libtool pkg-config \
-            gcc g++ libc6-dev libstdc++-dev \
+            gcc g++ libc6-dev \
             libncurses5-dev libssl-dev libedit-dev libsqlite3-dev libcurl4-openssl-dev \
             libpcre3-dev libspeexdsp-dev libopus-dev libsndfile1-dev \
             libavformat-dev libswscale-dev liblua5.4-dev libpq-dev uuid-dev yasm cmake unzip ca-certificates wget
@@ -43,7 +43,7 @@ jobs:
         run: |
           tar -czf freeswitch-debian11.tar.gz -C /opt/freeswitch .
 
-      - name: 🪛 回推构建产物至仓库
+      - name: 🪛 提交构建产物回仓库
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@users.noreply.github.com"
@@ -51,13 +51,12 @@ jobs:
           mkdir -p build-freeswitch-for-debian11
           mv freeswitch-debian11.tar.gz build-freeswitch-for-debian11/
 
-          echo "📦 当前目录：$(pwd)"
-          echo "📁 当前文件结构："
+          echo "📦 当前目录结构："
           find . -type f | sort
 
           git pull origin ${{ github.ref_name }} || true
           git add build-freeswitch-for-debian11/freeswitch-debian11.tar.gz || true
-          git commit -m "🤖 自动添加构建产物：FreeSWITCH Debian 11 tar.gz" || echo "🔍 没有变更，跳过提交"
-          git push origin HEAD:${{ github.ref_name }} || echo "⚠️ push 失败，可能是权限或空提交"
+          git commit -m "🤖 自动添加构建产物：FreeSWITCH Debian 11 tar.gz" || echo "📭 无需提交"
+          git push origin HEAD:${{ github.ref_name }} || echo "⚠️ push 失败，检查权限或分支保护"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
