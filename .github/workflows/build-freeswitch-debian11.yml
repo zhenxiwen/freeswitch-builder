@@ -1,0 +1,46 @@
+name: ⛓️ Build FreeSWITCH for Debian 11
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:11
+
+    steps:
+      - name: 🧱 安装构建依赖
+        run: |
+          apt update
+          apt install -y git build-essential autoconf automake libtool pkg-config \
+            libncurses5-dev libssl-dev libedit-dev libsqlite3-dev libcurl4-openssl-dev \
+            libpcre3-dev libspeexdsp-dev libopus-dev libsndfile1-dev \
+            libavformat-dev libswscale-dev liblua5.4-dev libpq-dev uuid-dev yasm cmake unzip ca-certificates wget
+
+      - name: 📥 下载源码
+        run: |
+          wget https://github.com/signalwire/freeswitch/archive/refs/tags/v1.10.10.tar.gz
+          tar -xzf v1.10.10.tar.gz
+          mv freeswitch-1.10.10 freeswitch
+
+      - name: 🧪 编译 FreeSWITCH
+        working-directory: ./freeswitch
+        run: |
+          ./bootstrap.sh -j
+          export CFLAGS="-Wno-error -Wno-error=deprecated-declarations -Wno-error=unused-function -Wno-error=array-parameter"
+          ./configure --prefix=/opt/freeswitch \
+            --disable-core-odbc-support --disable-dependency-tracking \
+            --enable-static-modules --without-pgsql
+          make -j$(nproc)
+          make install
+
+      - name: 📦 打包产物
+        run: |
+          tar -czf freeswitch-debian11.tar.gz -C /opt/freeswitch .
+
+      - name: ☁️ 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: freeswitch-debian11
+          path: freeswitch-debian11.tar.gz
